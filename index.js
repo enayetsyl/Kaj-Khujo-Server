@@ -67,15 +67,7 @@ async function run() {
         res.send(result)
       })
 
-      // getting data for my job page
-
-      // app.get('/api/v1/jobs', async(req, res) => {
-      //   console.log(req.query)
-      //    const result = await jobCollection.find().toArray()
-      //     res.send(result)
-      //   }
-       
-      // )
+     
       
       
 
@@ -134,6 +126,32 @@ async function run() {
           res.send(error)
         }
       })
+
+      // update job route
+
+      app.put('/api/v1/updatejob/:id', async(req, res) => {
+        const id = req.params.id;
+        const filter = {_id: new ObjectId(id)}
+        const options = { upsert: true };
+        const updatedJob = req.body;
+
+        const job = {
+$set: {
+      jobTitle:updatedJob.jobTitle,
+      jobBanner:updatedJob.jobBannerURL,
+      userName:updatedJob.userName,
+      salaryRange:updatedJob.salaryRange,
+      jobDescription:updatedJob.jobDescription,
+      postingDate: updatedJob.postingDate,
+      applicationDeadline: updatedJob.applicationDeadline,
+      applicants:updatedJob.jobApplicantsNumber,
+      category:updatedJob.jobCategory,
+}
+        }
+        const result = await jobCollection.updateOne(filter, job, options)
+        res.send(result)
+      })
+
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });

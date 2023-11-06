@@ -28,6 +28,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const jobCollection = client.db('jobDb').collection('allJob')
+    const applicationCollection = client.db('jobDb').collection('applications')
       // GET ROUTE
     // getting all jobs
       app.get('/api/v1/jobs', async(req, res) => {
@@ -50,6 +51,25 @@ async function run() {
         res.send(result)
       })
 
+      // posting applied job to the server
+      app.post('/api/v1/appliedJob', async(req, res) => {
+        try{
+          const {name, email, resume, id} = req.body;
+          const application = {
+            name,
+            email,
+            resume,
+            jobId: id,
+          }
+          const result = await applicationCollection.insertOne(application)
+          res.send(result)
+        }
+        catch(err){
+          console.log(err)
+          res.send(err)
+
+        }
+      })
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });

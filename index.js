@@ -67,7 +67,17 @@ async function run() {
         res.send(result)
       })
 
-     
+    //  get applied job
+
+    app.get('/api/v1/myappliedjobs', async(req, res) => {
+      console.log(req.query)
+      let query = {};
+      if(req.query?.userName){
+        query = {name: req.query.userName}
+      }
+      const result = await applicationCollection.find(query).toArray();
+      res.send(result) 
+    })
       
       
 

@@ -62,12 +62,27 @@ async function run() {
             jobId: id,
           }
           const result = await applicationCollection.insertOne(application)
-          res.send(result)
+          if(result.insertedId){
+            const query = { _id: new ObjectId(id)};
+            const job = await jobCollection.findOne(query);
+
+            const newApplicants = job.applicants + 1;
+
+            const updateResult = await jobCollection.updateOne(query, {
+              $set:{applicants: newApplicants}
+            })
+
+            if(updateResult.modifiedCount === 1){
+              res.status(200).json({message: 'Application Successful'});
+            } else{
+              res.status(500).json({message: 'Failed to update job application'})
+            }
+          }
+          
         }
         catch(err){
           console.log(err)
           res.send(err)
-
         }
       })
 

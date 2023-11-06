@@ -1,6 +1,7 @@
 const express = require('express');
 	const cors = require('cors');
   require('dotenv').config()
+  const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 	const app = express();
 	const port = process.env.PORT || 5000;
 
@@ -9,7 +10,7 @@ const express = require('express');
 
 
   
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ktgpsav.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -26,21 +27,36 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const jobCollection = client.db('jobDb').collection('allJob')
     const applicationCollection = client.db('jobDb').collection('applications')
       // GET ROUTE
     // getting all jobs
+      // app.get('/api/v1/jobs', async(req, res) => {
+      //   try{
+      //     console.log(req.query)
+      //     const cursor = jobCollection.find();
+      //     const result = await cursor.toArray();
+      //     res.send(result)
+      //   }
+      //   catch(err){
+      //     console.log(err)
+      //   }
+      // })
+
       app.get('/api/v1/jobs', async(req, res) => {
-        try{
-          const cursor = jobCollection.find();
-          const result = await cursor.toArray();
+        
+          console.log(req.query)
+          let query = {};
+          if(req.query?.userName){
+            query = {userName: req.query.userName}
+          }
+          const result = await jobCollection.find(query).toArray();
           res.send(result)
-        }
-        catch(err){
-          console.log(err)
-        }
+       
       })
+
+
 
       // getting one job for job details page based on id
 
@@ -50,6 +66,18 @@ async function run() {
         const result = await jobCollection.findOne(query);
         res.send(result)
       })
+
+      // getting data for my job page
+
+      // app.get('/api/v1/jobs', async(req, res) => {
+      //   console.log(req.query)
+      //    const result = await jobCollection.find().toArray()
+      //     res.send(result)
+      //   }
+       
+      // )
+      
+      
 
       // posting applied job to the server
       app.post('/api/v1/appliedJob', async(req, res) => {
@@ -83,6 +111,27 @@ async function run() {
         catch(err){
           console.log(err)
           res.send(err)
+        }
+      })
+
+      // add a job route 
+
+      app.post('/api/v1/addjob', async(req, res) => {
+        try{
+          const newJob = req.body;
+          const result = await jobCollection.insertOne(newJob)
+          console.log(result)
+          if(result.insertedId){
+            res.status(200).json({message: 'Job Added Successfully'});
+            
+          }else{
+            res.status(500).json({message: 'Failed to add job'})
+          }
+          
+        }
+        catch(error){
+          console.log(error)
+          res.send(error)
         }
       })
 

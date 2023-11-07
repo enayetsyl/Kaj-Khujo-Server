@@ -69,15 +69,49 @@ async function run() {
 
     //  get applied job
 
-    app.get('/api/v1/myappliedjobs', async(req, res) => {
-      console.log(req.query)
-      let query = {};
-      if(req.query?.userName){
-        query = {name: req.query.userName}
+    app.get('/api/v1/myappliedjobs', async (req, res) => {
+      console.log(req.query);
+      try {
+        let query = {};
+        if (req.query?.userName) {
+          query = { name: req.query.userName };
+        }
+    
+        // Find applications based on the user's name
+        const applications = await applicationCollection.find(query).toArray();
+    
+        // Create an array to store job data for each application
+        const jobDataForUser = [];
+    
+        for (const app of applications) {
+          // Find the job document for the application using async/await and ObjectId conversion
+          const job = await jobCollection.findOne({ _id: new ObjectId(app.jobId) });
+    
+          jobDataForUser.push({
+            application: app,
+            job: job,
+          });
+        }
+    
+        res.send(jobDataForUser);
+    
+      } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to retrieve applied jobs' });
       }
-      const result = await applicationCollection.find(query).toArray();
-      res.send(result) 
-    })
+    });
+    
+    
+
+    // app.get('/api/v1/myappliedjobs', async(req, res) => {
+    //   console.log(req.query)
+    //   let query = {};
+    //   if(req.query?.userName){
+    //     query = {name: req.query.userName}
+    //   }
+    //   const result = await applicationCollection.find(query).toArray();
+    //   res.send(result) 
+    // })
       
       
 

@@ -56,6 +56,20 @@ async function run() {
        
       })
 
+      // getting job for tab component
+
+
+app.get('/api/v1/tabJobs', async (req, res) => {
+  const { category } = req.query;
+  let query = {};
+
+  if (category && category !== 'All') {
+    query.category = category;
+  }
+
+  const result = await jobCollection.find(query).toArray();
+  res.send(result);
+});
 
 
       // getting one job for job details page based on id
@@ -88,7 +102,6 @@ async function run() {
           const job = await jobCollection.findOne({ _id: new ObjectId(app.jobId) });
     
           jobDataForUser.push({
-            application: app,
             job: job,
           });
         }

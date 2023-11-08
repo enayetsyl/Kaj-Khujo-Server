@@ -7,10 +7,11 @@
 	const app = express();
 	const port = process.env.PORT || 5000;
 
-	app.use(cors({
-    origin:['http://localhost:5173'],
+  app.use(cors({
+    origin: ['http://localhost:5173', 'https://kajkhujo.web.app'],
     credentials: true,
   }));
+  
 	app.use(express.json());
   app.use(cookieParser())
 
@@ -52,18 +53,6 @@ async function run() {
     const jobCollection = client.db('jobDb').collection('allJob')
     const applicationCollection = client.db('jobDb').collection('applications')
       // GET ROUTE
-    // getting all jobs
-      // app.get('/api/v1/jobs', async(req, res) => {
-      //   try{
-      //     console.log(req.query)
-      //     const cursor = jobCollection.find();
-      //     const result = await cursor.toArray();
-      //     res.send(result)
-      //   }
-      //   catch(err){
-      //     console.log(err)
-      //   }
-      // })
 
       app.get('/api/v1/jobs',  async(req, res) => {
         
@@ -106,39 +95,37 @@ app.get('/api/v1/tabJobs', async (req, res) => {
 
     //  get applied job
 
-    app.get('/api/v1/myappliedjobs', async (req, res) => {
-      console.log(req.query);
-      try {
-        let query = {};
-        if (req.query?.userName) {
-          query = { name: req.query.userName };
-        }
+    // app.get('/api/v1/myappliedjobs', async (req, res) => {
+    //   console.log(req.query);
+    //   try {
+    //     let query = {};
+    //     if (req.query?.userName) {
+    //       query = { name: req.query.userName };
+    //     }
     
-        // Find applications based on the user's name
-        const applications = await applicationCollection.find(query).toArray();
+    //     // Find applications based on the user's name
+    //     const applications = await applicationCollection.find(query).toArray();
     
-        // Create an array to store job data for each application
-        const jobDataForUser = [];
+    //     // Create an array to store job data for each application
+    //     const jobDataForUser = [];
     
-        for (const app of applications) {
-          // Find the job document for the application using async/await and ObjectId conversion
-          const job = await jobCollection.findOne({ _id: new ObjectId(app.jobId) });
+    //     for (const app of applications) {
+    //       // Find the job document for the application using async/await and ObjectId conversion
+    //       const job = await jobCollection.findOne({ _id: new ObjectId(app.jobId) });
     
-          jobDataForUser.push({
-            job: job,
-          });
-        }
+    //       jobDataForUser.push({
+    //         job: job,
+    //       });
+    //     }
     
-        res.send(jobDataForUser);
+    //     res.send(jobDataForUser);
     
-      } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to retrieve applied jobs' });
-      }
-    });
+    //   } catch (err) {
+    //     console.error(err);
+    //     res.status(500).json({ message: 'Failed to retrieve applied jobs' });
+    //   }
+    // });
     
-    
-
     // app.get('/api/v1/myappliedjobs', async(req, res) => {
     //   console.log(req.query)
     //   let query = {};
@@ -146,12 +133,24 @@ app.get('/api/v1/tabJobs', async (req, res) => {
     //     query = {name: req.query.userName}
     //   }
     //   const result = await applicationCollection.find(query).toArray();
+    //   console.log(result)
     //   res.send(result) 
     // })
+
+    app.get('/api/v1/myappliedjobs', async(req, res) => {
+      console.log(req.query)
+      let query = {};
+      if(req.query?.userName){
+        query = {name: req.query.userName}
+      }
+      const result = await applicationCollection.find(query).toArray();
+      res.send(result) 
+    })
       
       
 
       // posting applied job to the server
+      // this section is changing
       app.post('/api/v1/appliedJob', async(req, res) => {
         try{
           const {name, email, resume, id} = req.body;
@@ -186,8 +185,52 @@ app.get('/api/v1/tabJobs', async (req, res) => {
         }
       })
 
+
+      
+    // this is changed section
+
+    // const initializeApplicantsCount = async (jobId) => {
+    //   const query = { _id: new ObjectId(jobId) };
+    //   const job = await jobCollection.findOne(query);
+    //   if (job) {
+    //     const updateResult = await jobCollection.updateOne(query, {
+    //       $set: { applicants: 0 }, // Initialize the applicants count to 0
+    //     });
+    //     return updateResult.modifiedCount === 1;
+    //   }
+    //   return false;
+    // };
+
+    // // this is also changed section
+    // app.post('/api/v1/appliedJob', async (req, res) => {
+    //   try {
+    //     const { name, email, resume, id } = req.body;
+    //     const application = {
+    //       name,
+    //       email,
+    //       resume,
+    //       jobId: id,
+    //     };
+    
+    //     const result = await applicationCollection.insertOne(application);
+    //     if (result.insertedId) {
+    //       const query = { _id: new ObjectId(id) };
+    
+    //       // Remove the code that increments applicants here
+    
+    //       res.status(200).json({ message: 'Application Successful' });
+    //     } else {
+    //       res.status(500).json({ message: 'Failed to insert application' });
+    //     }
+    //   } catch (err) {
+    //     console.error(err);
+    //     res.status(500).json({ message: 'Server Error' });
+    //   }
+    // });
+    
+
       // add a job route 
-     
+    //  this is also changing
       app.post('/api/v1/addjob', verifyToken, async(req, res) => {
         if(req.body.email !== req.user.email){
           return res.status(403).send({message:'forbidden access'})
@@ -209,6 +252,35 @@ app.get('/api/v1/tabJobs', async (req, res) => {
           res.send(error)
         }
       })
+
+// this is new changed code
+// app.post('/api/v1/addjob', verifyToken, async (req, res) => {
+//   if (req.body.email !== req.user.email) {
+//     return res.status(403).send({ message: 'forbidden access' });
+//   }
+
+//   try {
+//     const newJob = req.body;
+
+//     const result = await jobCollection.insertOne(newJob);
+
+//     if (result.insertedId) {
+//       // Initialize the applicants count for the new job
+//       const success = await initializeApplicantsCount(result.insertedId);
+
+//       if (success) {
+//         res.status(200).json({ message: 'Job Added Successfully' });
+//       } else {
+//         res.status(500).json({ message: 'Failed to initialize applicants count' });
+//       }
+//     } else {
+//       res.status(500).json({ message: 'Failed to add job' });
+//     }
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: 'Server Error' });
+//   }
+// });
 
       // update job route
 
@@ -255,7 +327,7 @@ $set: {
         const user = req.body;
         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn:'1hr'})
         res.cookie('token', token, {
-          httpOnly: true,
+          httpOnly: false,
           secure: true,
           sameSite: 'none'
         }).send({success: true})

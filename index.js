@@ -1,13 +1,34 @@
-const express = require('express');
+  const express = require('express');
 	const cors = require('cors');
   require('dotenv').config()
+  const jwt = require('jsonwebtoken')
+  const cookieParser = require('cookie-parser') 
   const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 	const app = express();
 	const port = process.env.PORT || 5000;
 
-	app.use(cors());
+	app.use(cors({
+    origin:['http://localhost:5173'],
+    credentials: true,
+  }));
 	app.use(express.json());
+  app.use(cookieParser())
 
+  // own middleware
+
+  const verifyToken = async(req, res, next) => {
+    const token = req.cookies?.token
+    if(!token){
+      return res.status(401).send({message: "Not Authorised"})
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+      if(err){
+        return res.status(401).send({message: "Not Authorised"})
+      }
+      req.user = decoded
+      next()
+    })
+  }
 
   
 
@@ -44,7 +65,7 @@ async function run() {
       //   }
       // })
 
-      app.get('/api/v1/jobs', async(req, res) => {
+      app.get('/api/v1/jobs',  async(req, res) => {
         
           console.log(req.query)
           let query = {};
@@ -72,9 +93,11 @@ app.get('/api/v1/tabJobs', async (req, res) => {
 });
 
 
+
       // getting one job for job details page based on id
 
       app.get('/api/v1/jobs/:id', async(req, res) => {
+       
         const id = req.params.id;
         const query = {_id: new ObjectId(id)}
         const result = await jobCollection.findOne(query);
@@ -164,8 +187,11 @@ app.get('/api/v1/tabJobs', async (req, res) => {
       })
 
       // add a job route 
-
-      app.post('/api/v1/addjob', async(req, res) => {
+     
+      app.post('/api/v1/addjob', verifyToken, async(req, res) => {
+        if(req.body.email !== req.user.email){
+          return res.status(403).send({message:'forbidden access'})
+        }
         try{
           const newJob = req.body;
           const result = await jobCollection.insertOne(newJob)
@@ -186,7 +212,11 @@ app.get('/api/v1/tabJobs', async (req, res) => {
 
       // update job route
 
-      app.put('/api/v1/updatejob/:id', async(req, res) => {
+      app.put('/api/v1/updatejob/:id', verifyToken, async(req, res) => {
+        if(req.body.email !== req.user.email){
+          return res.status(403).send({message:'forbidden access'})
+        }
+
         const id = req.params.id;
         const filter = {_id: new ObjectId(id)}
         const options = { upsert: true };
@@ -216,6 +246,25 @@ $set: {
         const query = {_id: new ObjectId(id)}
         const result = await jobCollection.deleteOne(query)
         res.send(result)
+      })
+
+
+      // auth related route
+
+      app.post('/jwt', async(req, res) => {
+        const user = req.body;
+        const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn:'1hr'})
+        res.cookie('token', token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none'
+        }).send({success: true})
+      })
+
+      app.post('/logout', async(req, res) => {
+        const user = req.body;
+        console.log('logiing out', user)
+        res.clearCookie('token', {maxAge: 0}).send({success:true})
       })
 
     // Send a ping to confirm a successful connection
